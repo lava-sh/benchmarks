@@ -31,8 +31,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
@@ -87,5 +85,5 @@ jobs:
 
           git add yaml-rs
           git commit -m "Update benchmarks $(date +'%d.%m.%Y %H:%M:%S')" || exit 0
-          gh auth setup-git
+          git pull --rebase --autostash origin main
           git push
