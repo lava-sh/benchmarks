@@ -65,11 +65,15 @@ jobs:
           platform="${runner%-latest}"
           timestamp=$(date +"%d.%m.%Y-%H:%M:%S")
           
-          cp loads.svg "yaml-rs/${platform}-loads.svg"
-          cp dumps.svg "yaml-rs/${platform}-dumps.svg"
+          cd ../..
           
-          cp loads.svg "yaml-rs/${platform}/${platform}-${timestamp}-loads.svg"
-          cp dumps.svg "yaml-rs/${platform}/${platform}-${timestamp}-dumps.svg"
+          mkdir -p "yaml-rs/${platform}"
+          
+          cp yaml-rs-upstream/benchmark/loads.svg "yaml-rs/${platform}-loads.svg"
+          cp yaml-rs-upstream/benchmark/dumps.svg "yaml-rs/${platform}-dumps.svg"
+          
+          cp yaml-rs-upstream/benchmark/loads.svg "yaml-rs/${platform}/${platform}-${timestamp}-loads.svg"
+          cp yaml-rs-upstream/benchmark/dumps.svg "yaml-rs/${platform}/${platform}-${timestamp}-dumps.svg"
           
           git config --local user.name "github-actions[bot]"
           git config --local user.email "actions@github.com"
