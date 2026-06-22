@@ -67,7 +67,7 @@ jobs:
           
           runner="${{ matrix.runner }}"
           platform="${runner%-latest}"
-          timestamp=$(date +"%d.%m.%Y-%H:%M:%S")
+          timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
           
           cd ../..
           
@@ -84,4 +84,5 @@ jobs:
 
           git add yaml-rs
           git commit -m "Update benchmarks $(date +'%d.%m.%Y %H:%M:%S')" || exit 0
+          gh auth setup-git
           git push
