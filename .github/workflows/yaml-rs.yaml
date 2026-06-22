@@ -1,0 +1,79 @@
+# https://github.com/lava-sh/yaml-rs
+#
+# https://pypi.org/project/yaml-rs
+name: "yaml-rs"
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 10:00 Europe/Moscow (UTC+3)
+    - cron: "0 7 * * *"
+
+  workflow_dispatch:
+
+env:
+  ○_○: &python-version "3.14"
+
+jobs:
+  yaml-rs:
+    name: "yaml-rs / ${{ matrix.runner }}"
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [
+          "ubuntu-latest",
+          "windows-latest",
+          "macos-latest",
+        ]
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: *python-version
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+
+      - name: "Run benchmarks"
+        shell: bash
+        env:
+          PYTHON_VERSION: *python-version
+          UV_PYTHON_DOWNLOADS: 0
+          UV_LINK_MODE: ${{ matrix.runner == 'windows-latest' && 'copy' || '' }}
+        run: |
+          gh repo clone lava-sh/yaml-rs yaml-rs-upstream
+          
+          cd yaml-rs-upstream
+
+          uv venv .venv --python "${PYTHON_VERSION}"
+          uv pip install yaml-rs
+          uv pip install --group bench
+          uv run benchmark/run.py
+          
+          cd benchmark
+          
+          runner="${{ matrix.runner }}"
+          platform="${runner%-latest}"
+          timestamp=$(date +"%d.%m.%Y-%H:%M:%S")
+          
+          cp loads.svg "yaml-rs/${platform}-loads.svg"
+          cp dumps.svg "yaml-rs/${platform}-dumps.svg"
+          
+          cp loads.svg "yaml-rs/${platform}/${platform}-${timestamp}-loads.svg"
+          cp dumps.svg "yaml-rs/${platform}/${platform}-${timestamp}-dumps.svg"
+          
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "actions@github.com"
+
+          git add yaml-rs
+          git commit -m "Update benchmarks $(date +'%d.%m.%Y %H:%M:%S')" || exit 0
+          git push
