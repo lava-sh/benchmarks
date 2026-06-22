@@ -54,12 +54,11 @@ jobs:
           
           cd yaml-rs-upstream
 
-          uv venv .venv --python "${PYTHON_VERSION}"
-
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
             echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
           fi
 
+          uv venv .venv --python "${PYTHON_VERSION}"
           uv pip install yaml-rs
           uv pip install --group bench
           uv run benchmark/run.py
