@@ -49,13 +49,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PYTHON_VERSION: *python-version
           UV_PYTHON_DOWNLOADS: 0
-          UV_LINK_MODE: ${{ matrix.runner == 'windows-latest' && 'copy' || '' }}
         run: |
           gh repo clone lava-sh/yaml-rs yaml-rs-upstream
           
           cd yaml-rs-upstream
 
           uv venv .venv --python "${PYTHON_VERSION}"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
+          fi
+
           uv pip install yaml-rs
           uv pip install --group bench
           uv run benchmark/run.py
