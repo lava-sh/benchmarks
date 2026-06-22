@@ -46,6 +46,7 @@ jobs:
       - name: "Run benchmarks"
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           PYTHON_VERSION: *python-version
           UV_PYTHON_DOWNLOADS: 0
           UV_LINK_MODE: ${{ matrix.runner == 'windows-latest' && 'copy' || '' }}
