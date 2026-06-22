@@ -1,0 +1,89 @@
+# https://github.com/lava-sh/toml-rs
+#
+# https://pypi.org/project/toml-rs
+name: "toml-rs"
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 12:00 Europe/Moscow (UTC+3)
+    - cron: "0 9 * * *"
+
+  workflow_dispatch:
+
+env:
+  ○_○: &python-version "3.14"
+
+jobs:
+  toml-rs:
+    name: "toml-rs / ${{ matrix.runner }}"
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [
+          "ubuntu-latest",
+          "windows-latest",
+          "macos-latest",
+        ]
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: *python-version
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+
+      - name: "Run benchmarks"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHON_VERSION: *python-version
+          UV_PYTHON_DOWNLOADS: 0
+        run: |
+          gh repo clone lava-sh/toml-rs toml-rs-upstream
+          
+          cd toml-rs-upstream
+
+          uv venv .venv --python "${PYTHON_VERSION}"
+          
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            uv pip install toml-rs --link-mode=copy
+            uv pip install --group bench --link-mode=copy
+          else
+            uv pip install toml-rs
+            uv pip install --group bench
+          fi
+
+          uv run benchmark/run.py
+          
+          cd benchmark
+          
+          runner="${{ matrix.runner }}"
+          platform="${runner%-latest}"
+          timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
+          
+          cd ../..
+          
+          mkdir -p "toml-rs/${platform}"
+          
+          cp toml-rs-upstream/benchmark/loads.svg "toml-rs/${platform}-loads.svg"
+          cp toml-rs-upstream/benchmark/dumps.svg "toml-rs/${platform}-dumps.svg"
+          
+          cp toml-rs-upstream/benchmark/loads.svg "toml-rs/${platform}/${platform}-${timestamp}-loads.svg"
+          cp toml-rs-upstream/benchmark/dumps.svg "toml-rs/${platform}/${platform}-${timestamp}-dumps.svg"
+          
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "actions@github.com"
+
+          git add toml-rs
+          git commit -m "Update benchmarks $(date +'%d.%m.%Y %H:%M:%S')" || exit 0
+          git pull --rebase --autostash origin main
+          git push
