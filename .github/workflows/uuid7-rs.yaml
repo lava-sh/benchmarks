@@ -1,0 +1,89 @@
+# https://github.com/lava-sh/uuid7-rs
+#
+# https://pypi.org/project/uuid7-rs
+name: "uuid7-rs"
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 14:00 Europe/Moscow (UTC+3)
+    - cron: "0 11 * * *"
+
+  workflow_dispatch:
+
+env:
+  ○_○: &python-version "3.14"
+
+jobs:
+  uuid7-rs:
+    name: "uuid7-rs / ${{ matrix.runner }}"
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [
+          "ubuntu-latest",
+          "windows-latest",
+          "macos-latest",
+        ]
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: *python-version
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+
+      - name: "Run benchmarks"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHON_VERSION: *python-version
+          UV_PYTHON_DOWNLOADS: 0
+        run: |
+          gh repo clone lava-sh/uuid7-rs uuid7-rs-upstream
+          
+          cd uuid7-rs-upstream
+
+          uv venv .venv --python "${PYTHON_VERSION}"
+          
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            uv pip install uuid7-rs --link-mode=copy
+            uv pip install --group bench --link-mode=copy
+          else
+            uv pip install uuid7-rs
+            uv pip install --group bench
+          fi
+
+          uv run benchmark/run.py
+          
+          cd benchmark
+          
+          runner="${{ matrix.runner }}"
+          platform="${runner%-latest}"
+          timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
+          
+          cd ../..
+          
+          mkdir -p "uuid7-rs/${platform}"
+          
+          cp uuid7-rs-upstream/benchmark/uuid7.svg "uuid7-rs/${platform}-uuid7.svg"
+          cp uuid7-rs-upstream/benchmark/uuid7-compact.svg "uuid7-rs/${platform}-uuid7-compact.svg"
+          
+          cp uuid7-rs-upstream/benchmark/uuid7.svg "uuid7-rs/${platform}/${platform}-${timestamp}-uuid7.svg"
+          cp uuid7-rs-upstream/benchmark/uuid7-compact.svg "uuid7-rs/${platform}/${platform}-${timestamp}-uuid7-compact.svg"
+          
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "actions@github.com"
+
+          git add uuid7-rs
+          git commit -m "Update benchmarks $(date +'%d.%m.%Y %H:%M:%S')" || exit 0
+          git pull --rebase --autostash origin main
+          git push
