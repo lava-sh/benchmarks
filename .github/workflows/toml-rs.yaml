@@ -49,23 +49,20 @@ jobs:
           UV_PYTHON_DOWNLOADS: 0
         run: |
           gh repo clone lava-sh/toml-rs toml-rs-upstream
-          
           cd toml-rs-upstream
 
           uv venv .venv --python "${PYTHON_VERSION}"
-          
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-            uv pip install toml-rs --link-mode=copy
-            uv pip install --group bench --link-mode=copy
+            echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
+            .venv\scripts\activate
           else
-            uv pip install toml-rs
-            uv pip install --group bench
+            source .venv/bin/activate
           fi
 
-          uv run benchmark/run.py
-          
+          python benchmark/run.py
+
           cd benchmark
-          
+
           runner="${{ matrix.runner }}"
           platform="${runner%-latest}"
           timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
