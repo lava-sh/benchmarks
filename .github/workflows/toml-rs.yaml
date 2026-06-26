@@ -58,17 +58,16 @@ jobs:
           else
             source .venv/bin/activate
           fi
+          
+          uv pip install --group bench
 
           python benchmark/run.py
-
-          cd benchmark
 
           runner="${{ matrix.runner }}"
           platform="${runner%-latest}"
           timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
           
-          cd ../..
-          
+          cd ..
           mkdir -p "toml-rs/${platform}"
           
           cp toml-rs-upstream/benchmark/loads.svg "toml-rs/${platform}-loads.svg"
