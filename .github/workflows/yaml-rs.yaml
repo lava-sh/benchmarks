@@ -22,6 +22,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         runner: [
           "ubuntu-latest",
@@ -49,29 +50,27 @@ jobs:
           UV_PYTHON_DOWNLOADS: 0
         run: |
           gh repo clone lava-sh/yaml-rs yaml-rs-upstream
-          
           cd yaml-rs-upstream
 
           uv venv .venv --python "${PYTHON_VERSION}"
           
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-            uv pip install yaml-rs --link-mode=copy
-            uv pip install --group bench --link-mode=copy
+            echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
+            source .venv/Scripts/activate
           else
-            uv pip install yaml-rs
-            uv pip install --group bench
+            source .venv/bin/activate
           fi
 
-          uv run benchmark/run.py
-          
-          cd benchmark
+          uv pip install yaml-rs
+          uv pip install --group bench
+
+          python benchmark/run.py
           
           runner="${{ matrix.runner }}"
           platform="${runner%-latest}"
           timestamp=$(date +"%d.%m.%Y-%H-%M-%S")
           
-          cd ../..
-          
+          cd ..
           mkdir -p "yaml-rs/${platform}"
           
           cp yaml-rs-upstream/benchmark/loads.svg "yaml-rs/${platform}-loads.svg"

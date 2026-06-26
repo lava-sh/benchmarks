@@ -22,6 +22,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         runner: [
           "ubuntu-latest",
@@ -52,6 +53,7 @@ jobs:
           cd toml-rs-upstream
 
           uv venv .venv --python "${PYTHON_VERSION}"
+
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
             echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
             source .venv/Scripts/activate
