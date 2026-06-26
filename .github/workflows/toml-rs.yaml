@@ -59,6 +59,7 @@ jobs:
             source .venv/bin/activate
           fi
           
+          uv pip toml-rs
           uv pip install --group bench
 
           python benchmark/run.py
