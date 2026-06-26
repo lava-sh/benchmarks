@@ -54,7 +54,7 @@ jobs:
           uv venv .venv --python "${PYTHON_VERSION}"
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
             echo "UV_LINK_MODE=copy" >> "$GITHUB_ENV"
-            .venv\scripts\activate
+            source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
